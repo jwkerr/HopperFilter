@@ -28,7 +28,7 @@ public class InventoryMoveItemListener implements Listener {
 
     private boolean canItemPassFilter(final String containerName, final ItemStack item) {
         final String[] split = containerName.split(",");
-        final String itemName = item.getType().getKey().getKey().toLowerCase();
+        final String itemName = item.getType().getKey().getKey();
 
         for (final String string : split) {
             final String pattern = string.toLowerCase();

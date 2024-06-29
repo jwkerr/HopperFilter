@@ -11,28 +11,38 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class InventoryMoveItemListener implements Listener {
 
+    private static final Map<String, String[]> CONTAINER_SPLITS = new HashMap<>();
+
     @EventHandler
-    public void onInventoryMoveItem(InventoryMoveItemEvent event) {
-        Inventory initiator = event.getInitiator();
+    public void onInventoryMoveItem(final InventoryMoveItemEvent event) {
+        final Inventory initiator = event.getInitiator();
         if (!initiator.getType().equals(InventoryType.HOPPER)) return;
 
-        if (!(initiator.getHolder() instanceof Hopper hopper)) return;
+        if (!(initiator.getHolder() instanceof final Hopper hopper)) return;
 
-        String hopperName = serialiseComponent(hopper.customName());
+        final String hopperName = serialiseComponent(hopper.customName());
         if (hopperName == null) return;
 
         if (!canItemPassFilter(hopperName, event.getItem())) event.setCancelled(true);
     }
 
-    private boolean canItemPassFilter(String containerName, ItemStack item) {
-        String[] split = containerName.split(",");
-        String itemName = item.getType().toString().toLowerCase();
+    private boolean canItemPassFilter(final String containerName, final ItemStack item) {
+        String[] split = CONTAINER_SPLITS.getOrDefault(containerName, null);
+        if (split == null) { // Cache splits for containers of the same name (untested performance change)
+            split = containerName.split(",");
+            CONTAINER_SPLITS.put(containerName, split);
+        }
 
-        for (String string : split) {
-            String pattern = string.toLowerCase();
-            int length = pattern.length();
+        final String itemName = item.getType().toString().toLowerCase();
+
+        for (final String string : split) {
+            final String pattern = string.toLowerCase();
+            final int length = pattern.length();
 
             if (pattern.startsWith("*") && pattern.endsWith("*")) { // Contains specified pattern
                 if (itemName.contains(pattern.substring(1, length - 1))) return true;
@@ -48,7 +58,7 @@ public class InventoryMoveItemListener implements Listener {
         return false;
     }
 
-    private @Nullable String serialiseComponent(Component component) {
+    private @Nullable String serialiseComponent(final Component component) {
         if (component == null) return null;
         return PlainTextComponentSerializer.plainText().serialize(component);
     }

@@ -1,0 +1,8 @@
+name: HopperFilter
+version: "${project.version}"
+main: net.earthmc.hopperfilter.HopperFilter
+api-version: "1.20"
+authors: [Fruitloopins]
+description: Name hoppers. Filter items.
+website: https://earthmc.net
+folia-supported: true

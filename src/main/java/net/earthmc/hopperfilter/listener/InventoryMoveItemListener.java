@@ -31,7 +31,7 @@ public class InventoryMoveItemListener implements Listener {
         final String itemName = item.getType().getKey().getKey();
 
         for (final String string : split) {
-            final String pattern = string.toLowerCase();
+            final String pattern = string.toLowerCase().strip();
             final int length = pattern.length();
 
             if (pattern.startsWith("*") && pattern.endsWith("*")) { // Contains specified pattern

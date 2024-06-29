@@ -11,19 +11,14 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class InventoryMoveItemListener implements Listener {
-
-    private static final Map<String, String[]> CONTAINER_SPLITS = new HashMap<>();
 
     @EventHandler
     public void onInventoryMoveItem(final InventoryMoveItemEvent event) {
-        final Inventory initiator = event.getInitiator();
-        if (!initiator.getType().equals(InventoryType.HOPPER)) return;
+        final Inventory destination = event.getDestination();
+        if (!destination.getType().equals(InventoryType.HOPPER)) return;
 
-        if (!(initiator.getHolder() instanceof final Hopper hopper)) return;
+        if (!(destination.getHolder(false) instanceof final Hopper hopper)) return;
 
         final String hopperName = serialiseComponent(hopper.customName());
         if (hopperName == null) return;
@@ -32,13 +27,8 @@ public class InventoryMoveItemListener implements Listener {
     }
 
     private boolean canItemPassFilter(final String containerName, final ItemStack item) {
-        String[] split = CONTAINER_SPLITS.getOrDefault(containerName, null);
-        if (split == null) { // Cache splits for containers of the same name (untested performance change)
-            split = containerName.split(",");
-            CONTAINER_SPLITS.put(containerName, split);
-        }
-
-        final String itemName = item.getType().toString().toLowerCase();
+        final String[] split = containerName.split(",");
+        final String itemName = item.getType().getKey().getKey().toLowerCase();
 
         for (final String string : split) {
             final String pattern = string.toLowerCase();

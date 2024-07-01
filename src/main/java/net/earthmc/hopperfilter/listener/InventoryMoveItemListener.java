@@ -2,6 +2,10 @@ package net.earthmc.hopperfilter.listener;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.block.Hopper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -49,6 +53,10 @@ public class InventoryMoveItemListener implements Listener {
             case '*' -> itemName.contains(string); // Contains specified pattern
             case '^' -> itemName.startsWith(string); // Starts with specified pattern
             case '$' -> itemName.endsWith(string); // Ends with specified pattern
+            case '#' -> {
+                Tag<Material> tag = Bukkit.getTag(Tag.REGISTRY_ITEMS, NamespacedKey.minecraft(string), Material.class);
+                yield tag != null && tag.isTagged(item.getType());
+            }
             default -> false;
         };
     }

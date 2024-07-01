@@ -62,7 +62,6 @@ public class InventoryMoveItemListener implements Listener {
     }
 
     private @Nullable String serialiseComponent(final Component component) {
-        if (component == null) return null;
-        return PlainTextComponentSerializer.plainText().serialize(component);
+        return component == null ? null : PlainTextComponentSerializer.plainText().serialize(component);
     }
 }

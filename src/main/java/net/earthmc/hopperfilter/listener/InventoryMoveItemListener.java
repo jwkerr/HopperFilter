@@ -53,7 +53,7 @@ public class InventoryMoveItemListener implements Listener {
             case '*' -> itemName.contains(string); // Contains specified pattern
             case '^' -> itemName.startsWith(string); // Starts with specified pattern
             case '$' -> itemName.endsWith(string); // Ends with specified pattern
-            case '#' -> {
+            case '#' -> { // Item has specified tag
                 Tag<Material> tag = Bukkit.getTag(Tag.REGISTRY_ITEMS, NamespacedKey.minecraft(string), Material.class);
                 yield tag != null && tag.isTagged(item.getType());
             }

@@ -23,26 +23,33 @@ public class InventoryMoveItemListener implements Listener {
         final String hopperName = serialiseComponent(hopper.customName());
         if (hopperName == null) return;
 
-        if (!canItemPassFilter(hopperName, event.getItem())) event.setCancelled(true);
+        if (!canItemPassHopper(hopperName, event.getItem())) event.setCancelled(true);
     }
 
-    private boolean canItemPassFilter(final String containerName, final ItemStack item) {
-        final String[] split = containerName.split(",");
-        final String itemName = item.getType().getKey().getKey();
-
-        for (final String string : split) {
-            final String pattern = string.toLowerCase().strip();
-            final int length = pattern.length();
-
-            if (pattern.startsWith("*") && pattern.endsWith("*")) { // Contains specified pattern
-                if (itemName.contains(pattern.substring(1, length - 1))) return true;
-            } else if (pattern.startsWith("*")) { // Starts with specified pattern
-                if (itemName.startsWith(pattern.substring(1))) return true;
-            } else if (pattern.endsWith("*")) { // Ends with specified pattern
-                if (itemName.endsWith(pattern.substring(0, length - 1))) return true;
+    private boolean canItemPassHopper(final String hopperName, final ItemStack item) {
+        nextPatternGroup: for (final String patternGroup : hopperName.split(",")) {
+            for (final String patternGroupString : patternGroup.split("&")) {
+                final String pattern = patternGroupString.toLowerCase().strip();
+                if (!canItemPassPattern(pattern, item)) continue nextPatternGroup;
             }
+            return true;
+        }
 
-            if (pattern.equals(itemName)) return true;
+        return false;
+    }
+
+    private boolean canItemPassPattern(final String pattern, final ItemStack item) {
+        final String itemName = item.getType().getKey().getKey();
+        final int endIndex = pattern.length() - 1;
+
+        if (pattern.equals(itemName)) return true;
+
+        if (pattern.startsWith("*")) { // Contains specified pattern
+            return itemName.contains(pattern.substring(1, endIndex));
+        } else if (pattern.startsWith("^")) { // Starts with specified pattern
+            return itemName.startsWith(pattern.substring(1));
+        } else if (pattern.startsWith("$")) { // Ends with specified pattern
+            return itemName.endsWith(pattern.substring(0, endIndex));
         }
 
         return false;

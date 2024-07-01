@@ -6,17 +6,15 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
-import org.bukkit.block.Block;
 import org.bukkit.block.Hopper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class InventoryMoveItemListener implements Listener {
 
@@ -31,6 +29,19 @@ public class InventoryMoveItemListener implements Listener {
         if (hopperName == null) return;
 
         if (!canItemPassHopper(hopperName, event.getItem())) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onInventoryPickupItem(final InventoryPickupItemEvent event) {
+        final Inventory inventory = event.getInventory();
+        if (!inventory.getType().equals(InventoryType.HOPPER)) return;
+
+        if (!(inventory.getHolder(false) instanceof final Hopper hopper)) return;
+
+        final String hopperName = serialiseComponent(hopper.customName());
+        if (hopperName == null) return;
+
+        if (!canItemPassHopper(hopperName, event.getItem().getItemStack())) event.setCancelled(true);
     }
 
     private boolean canItemPassHopper(final String hopperName, final ItemStack item) {

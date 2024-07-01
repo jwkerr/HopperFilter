@@ -38,21 +38,19 @@ public class InventoryMoveItemListener implements Listener {
         return false;
     }
 
-    private boolean canItemPassPattern(final String pattern, final ItemStack item) {
+    private boolean canItemPassPattern(String pattern, final ItemStack item) {
         final String itemName = item.getType().getKey().getKey();
-        final int endIndex = pattern.length() - 1;
 
         if (pattern.equals(itemName)) return true;
 
-        if (pattern.startsWith("*")) { // Contains specified pattern
-            return itemName.contains(pattern.substring(1, endIndex));
-        } else if (pattern.startsWith("^")) { // Starts with specified pattern
-            return itemName.startsWith(pattern.substring(1));
-        } else if (pattern.startsWith("$")) { // Ends with specified pattern
-            return itemName.endsWith(pattern.substring(0, endIndex));
-        }
-
-        return false;
+        final char prefix = pattern.charAt(0); // The character at the start of the pattern
+        final String string = pattern.substring(1); // Anything after the prefix
+        return switch (prefix) {
+            case '*' -> itemName.contains(string); // Contains specified pattern
+            case '^' -> itemName.startsWith(string); // Starts with specified pattern
+            case '$' -> itemName.endsWith(string); // Ends with specified pattern
+            default -> false;
+        };
     }
 
     private @Nullable String serialiseComponent(final Component component) {

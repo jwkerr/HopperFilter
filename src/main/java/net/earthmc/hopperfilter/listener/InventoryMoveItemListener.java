@@ -2,11 +2,6 @@ package net.earthmc.hopperfilter.listener;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
-import org.bukkit.Tag;
 import org.bukkit.block.Hopper;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,35 +23,34 @@ public class InventoryMoveItemListener implements Listener {
         final String hopperName = serialiseComponent(hopper.customName());
         if (hopperName == null) return;
 
-        if (!canItemPassFilter(hopperName, event.getItem())) event.setCancelled(true);
+        if (!canItemPassHopper(hopperName, event.getItem())) event.setCancelled(true);
     }
 
-    private boolean canItemPassFilter(final String containerName, final ItemStack item) {
-        final String[] split = containerName.split(",");
-        final String itemName = item.getType().getKey().getKey();
-
-        for (final String string : split) {
-            final String pattern = string.toLowerCase().strip();
-            final int length = pattern.length();
-
-            if(pattern.startsWith("#")) { // Filter by item tags, such as `villager_plantable_seeds`
-                String key = pattern.substring(1);
-                Tag<Material> tag = Bukkit.getTag(Tag.REGISTRY_ITEMS, NamespacedKey.minecraft(key), Material.class);
-                if(tag != null) {
-                    if(tag.isTagged(item.getType())) return true;
-                }
-            } else if (pattern.startsWith("*") && pattern.endsWith("*")) { // Contains specified pattern
-                if (itemName.contains(pattern.substring(1, length - 1))) return true;
-            } else if (pattern.startsWith("*")) { // Starts with specified pattern
-                if (itemName.startsWith(pattern.substring(1))) return true;
-            } else if (pattern.endsWith("*")) { // Ends with specified pattern
-                if (itemName.endsWith(pattern.substring(0, length - 1))) return true;
+    private boolean canItemPassHopper(final String hopperName, final ItemStack item) {
+        nextPatternGroup: for (final String patternGroup : hopperName.split(",")) {
+            for (final String patternGroupString : patternGroup.split("&")) {
+                final String pattern = patternGroupString.toLowerCase().strip();
+                if (!canItemPassPattern(pattern, item)) continue nextPatternGroup;
             }
-
-            if (pattern.equals(itemName)) return true;
+            return true;
         }
 
         return false;
+    }
+
+    private boolean canItemPassPattern(String pattern, final ItemStack item) {
+        final String itemName = item.getType().getKey().getKey();
+
+        if (pattern.equals(itemName)) return true;
+
+        final char prefix = pattern.charAt(0); // The character at the start of the pattern
+        final String string = pattern.substring(1); // Anything after the prefix
+        return switch (prefix) {
+            case '*' -> itemName.contains(string); // Contains specified pattern
+            case '^' -> itemName.startsWith(string); // Starts with specified pattern
+            case '$' -> itemName.endsWith(string); // Ends with specified pattern
+            default -> false;
+        };
     }
 
     private @Nullable String serialiseComponent(final Component component) {

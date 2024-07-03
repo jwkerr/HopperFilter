@@ -7,12 +7,14 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Hopper;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.jetbrains.annotations.Nullable;
@@ -26,14 +28,25 @@ public class InventoryMoveItemListener implements Listener {
         final Inventory destination = event.getDestination();
         if (!destination.getType().equals(InventoryType.HOPPER)) return;
 
-        if (!(destination.getHolder(false) instanceof final Hopper hopper)) return;
-
-        final String hopperName = serialiseComponent(hopper.customName());
         final ItemStack item = event.getItem();
-        if (!canItemPassHopper(hopperName, event.getItem())) {
+        final InventoryHolder holder = destination.getHolder(false);
+
+        String hopperName;
+        if (holder instanceof final Hopper hopper) {
+            hopperName = serialiseComponent(hopper.customName());
+        } else if (holder instanceof final HopperMinecart hopperMinecart) {
+            hopperName = serialiseComponent(hopperMinecart.customName());
+        } else {
+            return;
+        }
+
+        if (!canItemPassHopper(hopperName, item)) {
             event.setCancelled(true);
             return;
         }
+
+        // Checks below only matter for hopper blocks
+        if (!(holder instanceof Hopper hopper)) return;
 
         // If there was a filter on this hopper we don't need to check for a more suitable hopper since this one is specifically filtering for this item
         if (hopperName != null) return;
@@ -49,9 +62,17 @@ public class InventoryMoveItemListener implements Listener {
         final Inventory inventory = event.getInventory();
         if (!inventory.getType().equals(InventoryType.HOPPER)) return;
 
-        if (!(inventory.getHolder(false) instanceof final Hopper hopper)) return;
+        final InventoryHolder holder = inventory.getHolder(false);
 
-        final String hopperName = serialiseComponent(hopper.customName());
+        String hopperName;
+        if (holder instanceof final Hopper hopper) {
+            hopperName = serialiseComponent(hopper.customName());
+        } else if (holder instanceof final HopperMinecart hopperMinecart) {
+            hopperName = serialiseComponent(hopperMinecart.customName());
+        } else {
+            return;
+        }
+
         if (hopperName == null) return;
 
         if (!canItemPassHopper(hopperName, event.getItem().getItemStack())) event.setCancelled(true);

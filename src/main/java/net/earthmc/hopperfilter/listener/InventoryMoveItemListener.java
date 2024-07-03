@@ -154,11 +154,21 @@ public class InventoryMoveItemListener implements Listener {
                     enchantments = item.getEnchantments();
                 }
 
-                final NamespacedKey key = NamespacedKey.minecraft(string);
+                String[] enchantmentSplit = string.split("_");
+                final NamespacedKey key = NamespacedKey.minecraft(enchantmentSplit[0]);
                 final Enchantment enchantment = Registry.ENCHANTMENT.get(key);
                 if (enchantment == null) yield false;
 
-                yield (enchantments.getOrDefault(enchantment, null) != null);
+                Integer userLevel;
+                try {
+                    userLevel = Integer.valueOf(enchantmentSplit[enchantmentSplit.length - 1]);
+                } catch (NumberFormatException e) {
+                    userLevel = null;
+                }
+
+                Integer enchantmentLevel = enchantments.getOrDefault(enchantment, null);
+                if (userLevel == null) yield enchantmentLevel != null;
+                yield (enchantmentLevel).equals(userLevel);
             }
             case '!' -> !canItemPassPattern(string, item); // NOT operator
             default -> false;

@@ -1,7 +1,6 @@
 package net.earthmc.hopperfilter.listener;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.earthmc.hopperfilter.HopperFilter;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -17,7 +16,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
@@ -33,9 +31,9 @@ public class InventoryActionListener implements Listener {
 
         String hopperName;
         if (holder instanceof final Hopper hopper) {
-            hopperName = serialiseComponent(hopper.customName());
+            hopperName = HopperFilter.serialiseComponent(hopper.customName());
         } else if (holder instanceof final HopperMinecart hopperMinecart) {
-            hopperName = serialiseComponent(hopperMinecart.customName());
+            hopperName = HopperFilter.serialiseComponent(hopperMinecart.customName());
         } else {
             return;
         }
@@ -66,9 +64,9 @@ public class InventoryActionListener implements Listener {
 
         String hopperName;
         if (holder instanceof final Hopper hopper) {
-            hopperName = serialiseComponent(hopper.customName());
+            hopperName = HopperFilter.serialiseComponent(hopper.customName());
         } else if (holder instanceof final HopperMinecart hopperMinecart) {
-            hopperName = serialiseComponent(hopperMinecart.customName());
+            hopperName = HopperFilter.serialiseComponent(hopperMinecart.customName());
         } else {
             return;
         }
@@ -105,7 +103,7 @@ public class InventoryActionListener implements Listener {
             otherHopper = facingHopper;
         }
 
-        final String hopperName = serialiseComponent(otherHopper.customName());
+        final String hopperName = HopperFilter.serialiseComponent(otherHopper.customName());
         if (hopperName == null) return false;
 
         // Before this method is called we are certain the destinationHopper does not have a name
@@ -166,16 +164,15 @@ public class InventoryActionListener implements Listener {
                     userLevel = null;
                 }
 
-                Integer enchantmentLevel = enchantments.getOrDefault(enchantment, null);
-                if (userLevel == null) yield enchantmentLevel != null;
-                yield (enchantmentLevel).equals(userLevel);
+                Integer enchantmentLevel = enchantments.get(enchantment);
+                if (userLevel == null) {
+                    yield enchantmentLevel != null;
+                } else {
+                    yield enchantmentLevel != null && (enchantmentLevel).equals(userLevel);
+                }
             }
             case '!' -> !canItemPassPattern(string, item); // NOT operator
             default -> false;
         };
-    }
-
-    private @Nullable String serialiseComponent(final Component component) {
-        return component == null ? null : PlainTextComponentSerializer.plainText().serialize(component);
     }
 }

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
-public class InventoryMoveItemListener implements Listener {
+public class InventoryActionListener implements Listener {
 
     @EventHandler
     public void onInventoryMoveItem(final InventoryMoveItemEvent event) {

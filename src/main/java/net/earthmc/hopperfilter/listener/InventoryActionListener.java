@@ -1,6 +1,6 @@
 package net.earthmc.hopperfilter.listener;
 
-import net.earthmc.hopperfilter.HopperFilter;
+import net.earthmc.hopperfilter.util.PatternUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -16,7 +16,11 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
+import java.util.List;
 import java.util.Map;
 
 public class InventoryActionListener implements Listener {
@@ -31,9 +35,9 @@ public class InventoryActionListener implements Listener {
 
         String hopperName;
         if (holder instanceof final Hopper hopper) {
-            hopperName = HopperFilter.serialiseComponent(hopper.customName());
+            hopperName = PatternUtil.serialiseComponent(hopper.customName());
         } else if (holder instanceof final HopperMinecart hopperMinecart) {
-            hopperName = HopperFilter.serialiseComponent(hopperMinecart.customName());
+            hopperName = PatternUtil.serialiseComponent(hopperMinecart.customName());
         } else {
             return;
         }
@@ -64,9 +68,9 @@ public class InventoryActionListener implements Listener {
 
         String hopperName;
         if (holder instanceof final Hopper hopper) {
-            hopperName = HopperFilter.serialiseComponent(hopper.customName());
+            hopperName = PatternUtil.serialiseComponent(hopper.customName());
         } else if (holder instanceof final HopperMinecart hopperMinecart) {
-            hopperName = HopperFilter.serialiseComponent(hopperMinecart.customName());
+            hopperName = PatternUtil.serialiseComponent(hopperMinecart.customName());
         } else {
             return;
         }
@@ -103,7 +107,7 @@ public class InventoryActionListener implements Listener {
             otherHopper = facingHopper;
         }
 
-        final String hopperName = HopperFilter.serialiseComponent(otherHopper.customName());
+        final String hopperName = PatternUtil.serialiseComponent(otherHopper.customName());
         if (hopperName == null) return false;
 
         // Before this method is called we are certain the destinationHopper does not have a name
@@ -143,6 +147,29 @@ public class InventoryActionListener implements Listener {
 
                 yield tag != null && tag.isTagged(item.getType());
             }
+            case '~' -> { // Item has specified potion effect
+                final Material material = item.getType();
+                if (!(material.equals(Material.POTION) || material.equals(Material.SPLASH_POTION) || material.equals(Material.LINGERING_POTION))) yield false;
+
+                final String[] split = string.split("_");
+
+                PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(split[0], Registry.POTION_EFFECT_TYPE);
+
+                Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
+
+                final PotionMeta meta = (PotionMeta) item.getItemMeta();
+                final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
+                if (userLevel == null) {
+                    for (PotionEffect effect : effects) {
+                        if (effect.getType().equals(type)) yield true;
+                    }
+                } else {
+                    for (PotionEffect effect : effects) {
+                        if (effect.getType().equals(type) && effect.getAmplifier() + 1 == userLevel) yield true;
+                    }
+                }
+                yield false;
+            }
             case '+' -> { // Item has specified enchantment
                 Map<Enchantment, Integer> enchantments;
                 if (item.getType().equals(Material.ENCHANTED_BOOK)) {
@@ -152,19 +179,14 @@ public class InventoryActionListener implements Listener {
                     enchantments = item.getEnchantments();
                 }
 
-                String[] enchantmentSplit = string.split("_");
-                final NamespacedKey key = NamespacedKey.minecraft(enchantmentSplit[0]);
-                final Enchantment enchantment = Registry.ENCHANTMENT.get(key);
+                final String[] split = string.split("_");
+
+                final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(split[0], Registry.ENCHANTMENT);
                 if (enchantment == null) yield false;
 
-                Integer userLevel;
-                try {
-                    userLevel = Integer.valueOf(enchantmentSplit[enchantmentSplit.length - 1]);
-                } catch (NumberFormatException e) {
-                    userLevel = null;
-                }
+                Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
 
-                Integer enchantmentLevel = enchantments.get(enchantment);
+                final Integer enchantmentLevel = enchantments.get(enchantment);
                 if (userLevel == null) {
                     yield enchantmentLevel != null;
                 } else {

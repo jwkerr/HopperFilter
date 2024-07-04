@@ -91,14 +91,14 @@ public class InventoryActionListener implements Listener {
         // If the relative block is not a hopper we don't care about it as that means our original destination is the only possible destination
         if (!facingBlock.getType().equals(Material.HOPPER)) return false;
 
-        final Hopper facingHopper = (Hopper) facingBlock.getState();
+        final Hopper facingHopper = (Hopper) facingBlock.getState(false);
 
         Hopper otherHopper;
         if (facingHopper.equals(destinationHopper)) { // We need to check the hopper below
             facingBlock = sourceHopper.getBlock().getRelative(BlockFace.DOWN);
             if (!facingBlock.getType().equals(Material.HOPPER)) return false; // We can safely say the original is the only hopper
 
-            otherHopper = (Hopper) facingBlock.getState();
+            otherHopper = (Hopper) facingBlock.getState(false);
         } else { // We need to check this hopper
             otherHopper = facingHopper;
         }

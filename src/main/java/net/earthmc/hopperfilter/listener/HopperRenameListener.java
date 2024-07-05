@@ -7,6 +7,7 @@ import net.earthmc.hopperfilter.util.PatternUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.Hopper;
@@ -139,6 +140,8 @@ public class HopperRenameListener implements Listener {
     }
 
     private void renameHopper(final Player player, final Hopper hopper, final String name) {
+        if (hopper.getBlock().getType().equals(Material.AIR)) return;
+
         final Component component = name.equals("null") ? null : Component.text(name);
         hopper.customName(component);
 

@@ -124,7 +124,6 @@ public class InventoryActionListener implements Listener {
             nextAnd: for (final String andString : condition.split("&")) {
                 for (final String orString : andString.split("\\|")) {
                     final String pattern = orString.toLowerCase().strip();
-                    System.out.println(pattern);
                     if (canItemPassPattern(pattern, item)) continue nextAnd;
                 }
                 continue nextCondition;

@@ -55,8 +55,16 @@ public class HopperRenameListener implements Listener {
                 List<String> items = new ArrayList<>(List.of(key));
                 HOPPER_INTERACTIONS_ITEM.put(player, new HopperRenameInteraction(hopper, items));
             } else {
-                hri.getItems().add(key);
+                List<String> items = hri.getItems();
+                if (!items.contains(key)) {
+                    items.add(key);
+                } else {
+                    return;
+                }
             }
+
+            final Random random = new Random();
+            player.playSound(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, random.nextFloat(0.55F, 1.25F));
         }
     }
 

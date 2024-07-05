@@ -153,9 +153,9 @@ public class InventoryActionListener implements Listener {
 
                 final String[] split = string.split("_");
 
-                PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(split[0], Registry.POTION_EFFECT_TYPE);
+                final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(split[0], Registry.POTION_EFFECT_TYPE);
 
-                Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
+                final Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
 
                 final PotionMeta meta = (PotionMeta) item.getItemMeta();
                 final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
@@ -173,7 +173,7 @@ public class InventoryActionListener implements Listener {
             case '+' -> { // Item has specified enchantment
                 Map<Enchantment, Integer> enchantments;
                 if (item.getType().equals(Material.ENCHANTED_BOOK)) {
-                    EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+                    final EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
                     enchantments = meta.getStoredEnchants();
                 } else {
                     enchantments = item.getEnchantments();
@@ -184,7 +184,7 @@ public class InventoryActionListener implements Listener {
                 final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(split[0], Registry.ENCHANTMENT);
                 if (enchantment == null) yield false;
 
-                Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
+                final Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
 
                 final Integer enchantmentLevel = enchantments.get(enchantment);
                 if (userLevel == null) {

@@ -2,10 +2,14 @@ package net.earthmc.hopperfilter.util;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PatternUtil {
 
@@ -24,6 +28,20 @@ public class PatternUtil {
             return Integer.valueOf(string);
         } catch (NumberFormatException e) {
             return null;
+        }
+    }
+
+    public static Pair<String, Integer> getStringIntegerPairFromString(String string) {
+        final String[] split = string.split("_");
+        if (split.length == 1) return Pair.of(split[0], null);
+
+        final Integer integer = getIntegerFromString(split[split.length - 1]);
+        if (integer == null) {
+            return Pair.of(String.join("_", split), null);
+        } else {
+            final List<String> list = new ArrayList<>(List.of(split));
+            list.remove(list.size() - 1);
+            return Pair.of(String.join("_", list), integer);
         }
     }
 }

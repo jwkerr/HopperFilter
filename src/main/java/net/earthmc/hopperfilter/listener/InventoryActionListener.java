@@ -1,6 +1,7 @@
 package net.earthmc.hopperfilter.listener;
 
 import net.earthmc.hopperfilter.util.PatternUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -119,10 +120,14 @@ public class InventoryActionListener implements Listener {
     private boolean canItemPassHopper(final String hopperName, final ItemStack item) {
         if (hopperName == null) return true;
 
-        nextPatternGroup: for (final String patternGroup : hopperName.split(",")) {
-            for (final String patternGroupString : patternGroup.split("&")) {
-                final String pattern = patternGroupString.toLowerCase().strip();
-                if (!canItemPassPattern(pattern, item)) continue nextPatternGroup;
+        nextCondition: for (final String condition : hopperName.split(",")) {
+            nextAnd: for (final String andString : condition.split("&")) {
+                for (final String orString : andString.split("\\|")) {
+                    final String pattern = orString.toLowerCase().strip();
+                    System.out.println(pattern);
+                    if (canItemPassPattern(pattern, item)) continue nextAnd;
+                }
+                continue nextCondition;
             }
             return true;
         }
@@ -151,11 +156,11 @@ public class InventoryActionListener implements Listener {
                 final Material material = item.getType();
                 if (!(material.equals(Material.POTION) || material.equals(Material.SPLASH_POTION) || material.equals(Material.LINGERING_POTION))) yield false;
 
-                final String[] split = string.split("_");
+                final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
 
-                final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(split[0], Registry.POTION_EFFECT_TYPE);
+                final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.POTION_EFFECT_TYPE);
 
-                final Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
+                final Integer userLevel = pair.getRight();
 
                 final PotionMeta meta = (PotionMeta) item.getItemMeta();
                 final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
@@ -179,12 +184,12 @@ public class InventoryActionListener implements Listener {
                     enchantments = item.getEnchantments();
                 }
 
-                final String[] split = string.split("_");
+                final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
 
-                final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(split[0], Registry.ENCHANTMENT);
+                final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.ENCHANTMENT);
                 if (enchantment == null) yield false;
 
-                final Integer userLevel = PatternUtil.getIntegerFromString(split[split.length - 1]);
+                final Integer userLevel = pair.getRight();
 
                 final Integer enchantmentLevel = enchantments.get(enchantment);
                 if (userLevel == null) {

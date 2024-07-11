@@ -162,7 +162,7 @@ public class InventoryActionListener implements Listener {
         final Material material = item.getType();
         if (!(material.equals(Material.POTION) || material.equals(Material.SPLASH_POTION) || material.equals(Material.LINGERING_POTION))) return false;
 
-        final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
+        final Pair<String, Integer> pair = PatternUtil.getNameLevelPairFromString(string);
 
         final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.POTION_EFFECT_TYPE);
 
@@ -192,7 +192,7 @@ public class InventoryActionListener implements Listener {
             enchantments = item.getEnchantments();
         }
 
-        final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
+        final Pair<String, Integer> pair = PatternUtil.getNameLevelPairFromString(string);
 
         final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.ENCHANTMENT);
         if (enchantment == null) return false;

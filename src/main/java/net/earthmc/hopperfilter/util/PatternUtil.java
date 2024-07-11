@@ -31,7 +31,7 @@ public class PatternUtil {
         }
     }
 
-    public static Pair<String, Integer> getStringIntegerPairFromString(String string) {
+    public static Pair<String, Integer> getNameLevelPairFromString(String string) {
         final String[] split = string.split("_");
         if (split.length == 1) return Pair.of(split[0], null);
 

@@ -142,6 +142,7 @@ public class InventoryActionListener implements Listener {
         final char prefix = pattern.charAt(0); // The character at the start of the pattern
         final String string = pattern.substring(1); // Anything after the prefix
         return switch (prefix) {
+            case '!' -> !canItemPassPattern(string, item); // NOT operator
             case '*' -> itemName.contains(string); // Contains specified pattern
             case '^' -> itemName.startsWith(string); // Starts with specified pattern
             case '$' -> itemName.endsWith(string); // Ends with specified pattern
@@ -151,54 +152,58 @@ public class InventoryActionListener implements Listener {
 
                 yield tag != null && tag.isTagged(item.getType());
             }
-            case '~' -> { // Item has specified potion effect
-                final Material material = item.getType();
-                if (!(material.equals(Material.POTION) || material.equals(Material.SPLASH_POTION) || material.equals(Material.LINGERING_POTION))) yield false;
-
-                final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
-
-                final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.POTION_EFFECT_TYPE);
-
-                final Integer userLevel = pair.getRight();
-
-                final PotionMeta meta = (PotionMeta) item.getItemMeta();
-                final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
-                if (userLevel == null) {
-                    for (PotionEffect effect : effects) {
-                        if (effect.getType().equals(type)) yield true;
-                    }
-                } else {
-                    for (PotionEffect effect : effects) {
-                        if (effect.getType().equals(type) && effect.getAmplifier() + 1 == userLevel) yield true;
-                    }
-                }
-                yield false;
-            }
-            case '+' -> { // Item has specified enchantment
-                Map<Enchantment, Integer> enchantments;
-                if (item.getType().equals(Material.ENCHANTED_BOOK)) {
-                    final EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
-                    enchantments = meta.getStoredEnchants();
-                } else {
-                    enchantments = item.getEnchantments();
-                }
-
-                final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
-
-                final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.ENCHANTMENT);
-                if (enchantment == null) yield false;
-
-                final Integer userLevel = pair.getRight();
-
-                final Integer enchantmentLevel = enchantments.get(enchantment);
-                if (userLevel == null) {
-                    yield enchantmentLevel != null;
-                } else {
-                    yield enchantmentLevel != null && (enchantmentLevel).equals(userLevel);
-                }
-            }
-            case '!' -> !canItemPassPattern(string, item); // NOT operator
+            case '~' -> doesItemHaveSpecifiedPotionEffect(item, string); // Item has specified potion effect
+            case '+' -> doesItemHaveSpecifiedEnchantment(item, string); // Item has specified enchantment
             default -> false;
         };
+    }
+
+    private boolean doesItemHaveSpecifiedPotionEffect(ItemStack item, String string) {
+        final Material material = item.getType();
+        if (!(material.equals(Material.POTION) || material.equals(Material.SPLASH_POTION) || material.equals(Material.LINGERING_POTION))) return false;
+
+        final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
+
+        final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.POTION_EFFECT_TYPE);
+
+        final Integer userLevel = pair.getRight();
+
+        final PotionMeta meta = (PotionMeta) item.getItemMeta();
+        final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
+        if (userLevel == null) {
+            for (PotionEffect effect : effects) {
+                if (effect.getType().equals(type)) return true;
+            }
+        } else {
+            for (PotionEffect effect : effects) {
+                if (effect.getType().equals(type) && effect.getAmplifier() + 1 == userLevel) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean doesItemHaveSpecifiedEnchantment(ItemStack item, String string) {
+        Map<Enchantment, Integer> enchantments;
+        if (item.getType().equals(Material.ENCHANTED_BOOK)) {
+            final EnchantmentStorageMeta meta = (EnchantmentStorageMeta) item.getItemMeta();
+            enchantments = meta.getStoredEnchants();
+        } else {
+            enchantments = item.getEnchantments();
+        }
+
+        final Pair<String, Integer> pair = PatternUtil.getStringIntegerPairFromString(string);
+
+        final Enchantment enchantment = (Enchantment) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.ENCHANTMENT);
+        if (enchantment == null) return false;
+
+        final Integer userLevel = pair.getRight();
+
+        final Integer enchantmentLevel = enchantments.get(enchantment);
+        if (userLevel == null) {
+            return enchantmentLevel != null;
+        } else {
+            return enchantmentLevel != null && (enchantmentLevel).equals(userLevel);
+        }
     }
 }

@@ -49,11 +49,11 @@ public class HopperRenameListener implements Listener {
             final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
             if (!bbe.callEvent()) return;
 
-            String key = item.getType().getKey().getKey();
+            final String key = item.getType().getKey().getKey();
 
-            HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
+            final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
             if (hri == null) {
-                List<String> items = new ArrayList<>(List.of(key));
+                final List<String> items = new ArrayList<>(List.of(key));
                 HOPPER_INTERACTIONS_ITEM.put(player, new HopperRenameInteraction(hopper, items));
             } else {
                 List<String> items = hri.getItems();

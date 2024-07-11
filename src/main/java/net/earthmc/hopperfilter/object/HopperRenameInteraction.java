@@ -9,7 +9,7 @@ public class HopperRenameInteraction {
     private final Hopper hopper;
     private final List<String> items;
 
-    public HopperRenameInteraction(Hopper hopper, List<String> items) {
+    public HopperRenameInteraction(final Hopper hopper, final List<String> items) {
         this.hopper = hopper;
         this.items = items;
     }

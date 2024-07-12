@@ -1,6 +1,7 @@
 package net.earthmc.hopperfilter.listener;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
+import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
 import net.earthmc.hopperfilter.HopperFilter;
 import net.earthmc.hopperfilter.object.HopperRenameInteraction;
 import net.earthmc.hopperfilter.util.PatternUtil;
@@ -22,6 +23,7 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HopperRenameListener implements Listener {
 
@@ -64,8 +66,7 @@ public class HopperRenameListener implements Listener {
                 }
             }
 
-            final Random random = new Random();
-            player.playSound(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, random.nextFloat(0.55F, 1.25F));
+            playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
         }
     }
 
@@ -78,12 +79,11 @@ public class HopperRenameListener implements Listener {
         final Location hopperLocation = hopper.getLocation();
         final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
 
-        if (distanceSquared > 5 * 5) {
-            HOPPER_INTERACTIONS_TYPING.remove(player);
+        if (distanceSquared < 5 * 5) return;
 
-            final Random random = new Random();
-            player.playSound(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, random.nextFloat(1.25F, 1.5F));
-        }
+        HOPPER_INTERACTIONS_TYPING.remove(player);
+
+        playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
     }
 
     @EventHandler
@@ -95,12 +95,11 @@ public class HopperRenameListener implements Listener {
         final Location hopperLocation = hri.getHopper().getLocation();
         final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
 
-        if (distanceSquared > 5 * 5) {
-            HOPPER_INTERACTIONS_ITEM.remove(player);
+        if (distanceSquared < 5 * 5) return;
 
-            final Random random = new Random();
-            player.playSound(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, random.nextFloat(1.25F, 1.5F));
-        }
+        HOPPER_INTERACTIONS_ITEM.remove(player);
+
+        playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
     }
 
     @EventHandler
@@ -111,7 +110,7 @@ public class HopperRenameListener implements Listener {
         final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.remove(player);
         if (hri != null) {
             final Hopper hopper = hri.getHopper();
-            renameHopper(player, hopper, String.join(",", hri.getItems()));
+            renameHopper(hopper, String.join(",", hri.getItems()));
         }
     }
 
@@ -124,7 +123,7 @@ public class HopperRenameListener implements Listener {
         event.setCancelled(true);
 
         final String originalMessage = PatternUtil.serialiseComponent(event.originalMessage());
-        renameHopper(player, hopper, originalMessage);
+        renameHopper(hopper, originalMessage);
 
         HOPPER_INTERACTIONS_TYPING.remove(player);
     }
@@ -135,20 +134,29 @@ public class HopperRenameListener implements Listener {
 
         HOPPER_INTERACTIONS_TYPING.put(player, hopper);
 
-        final Random random = new Random();
-        player.playSound(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, random.nextFloat(0.55F, 1.25F));
+        playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
     }
 
-    private void renameHopper(final Player player, final Hopper hopper, final String name) {
-        if (hopper.getBlock().getType().equals(Material.AIR)) return;
+    private void renameHopper(final Hopper hopper, final String name) {
+        final HopperFilter instance = HopperFilter.getInstance();
+        final RegionScheduler rs = instance.getServer().getRegionScheduler();
+
+        AtomicBoolean shouldReturn = new AtomicBoolean(false);
+        rs.run(instance, hopper.getLocation(), task -> {
+            if (!hopper.getBlock().getType().equals(Material.HOPPER)) shouldReturn.set(true);
+        });
+        if (shouldReturn.get()) return;
 
         final Component component = name.equals("null") ? null : Component.text(name);
         hopper.customName(component);
 
-        final HopperFilter instance = HopperFilter.getInstance();
-        instance.getServer().getRegionScheduler().run(instance, hopper.getLocation(), task -> hopper.update());
+        rs.run(instance, hopper.getLocation(), task -> hopper.update());
 
-        final Random random = new Random();
-        player.playSound(hopper.getLocation(), Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, random.nextFloat(1.25F, 1.5F));
+        playSoundAtLocation(hopper.getLocation(), Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
+    }
+
+    private void playSoundAtLocation(Location location, Sound sound, float volume, float origin, float bound) {
+        Random random = new Random();
+        location.getWorld().playSound(location, sound, volume, random.nextFloat(origin, bound));
     }
 }

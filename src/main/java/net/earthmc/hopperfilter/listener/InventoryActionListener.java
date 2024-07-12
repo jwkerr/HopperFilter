@@ -165,6 +165,7 @@ public class InventoryActionListener implements Listener {
         final Pair<String, Integer> pair = PatternUtil.getNameLevelPairFromString(string);
 
         final PotionEffectType type = (PotionEffectType) PatternUtil.getKeyedFromString(pair.getLeft(), Registry.POTION_EFFECT_TYPE);
+        if (type == null) return false;
 
         final Integer userLevel = pair.getRight();
 
@@ -174,8 +175,12 @@ public class InventoryActionListener implements Listener {
             for (PotionEffect effect : effects) {
                 if (effect.getType().equals(type)) return true;
             }
+            return meta.hasCustomEffect(type);
         } else {
             for (PotionEffect effect : effects) {
+                if (effect.getType().equals(type) && effect.getAmplifier() + 1 == userLevel) return true;
+            }
+            for (PotionEffect effect : meta.getCustomEffects()) {
                 if (effect.getType().equals(type) && effect.getAmplifier() + 1 == userLevel) return true;
             }
         }

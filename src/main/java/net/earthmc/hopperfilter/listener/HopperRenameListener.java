@@ -1,14 +1,12 @@
 package net.earthmc.hopperfilter.listener;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
 import net.earthmc.hopperfilter.HopperFilter;
 import net.earthmc.hopperfilter.object.HopperRenameInteraction;
 import net.earthmc.hopperfilter.util.PatternUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.Hopper;
@@ -23,7 +21,6 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HopperRenameListener implements Listener {
 
@@ -141,18 +138,11 @@ public class HopperRenameListener implements Listener {
 
     private void renameHopper(final Hopper hopper, final String name) {
         final HopperFilter instance = HopperFilter.getInstance();
-        final RegionScheduler rs = instance.getServer().getRegionScheduler();
-
-        AtomicBoolean shouldReturn = new AtomicBoolean(false);
-        rs.run(instance, hopper.getLocation(), task -> {
-            if (!hopper.getBlock().getType().equals(Material.HOPPER)) shouldReturn.set(true);
-        });
-        if (shouldReturn.get()) return;
 
         final Component component = name.equals("null") ? null : Component.text(name);
         hopper.customName(component);
 
-        rs.run(instance, hopper.getLocation(), task -> hopper.update());
+        instance.getServer().getRegionScheduler().run(instance, hopper.getLocation(), task -> hopper.update());
 
         playSoundAtLocation(hopper.getLocation(), Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
     }

@@ -32,6 +32,8 @@ public class HopperRenameListener implements Listener {
 
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
+        if (!HopperFilter.getConfigManager().getConfig().getBoolean("enable_simple_hopper_renaming")) return;
+
         final Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
 
@@ -156,7 +158,10 @@ public class HopperRenameListener implements Listener {
     }
 
     private void playSoundAtLocation(Location location, Sound sound, float volume, float origin, float bound) {
-        Random random = new Random();
-        location.getWorld().playSound(location, sound, volume, random.nextFloat(origin, bound));
+        final HopperFilter instance = HopperFilter.getInstance();
+        instance.getServer().getRegionScheduler().run(instance, location, task -> {
+            Random random = new Random();
+            location.getWorld().playSound(location, sound, volume, random.nextFloat(origin, bound));
+        });
     }
 }

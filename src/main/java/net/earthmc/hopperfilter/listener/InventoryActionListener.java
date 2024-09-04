@@ -1,6 +1,8 @@
 package net.earthmc.hopperfilter.listener;
 
+import net.earthmc.hopperfilter.util.ContainerUtil;
 import net.earthmc.hopperfilter.util.PatternUtil;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -108,6 +110,8 @@ public class InventoryActionListener implements Listener {
             otherHopper = facingHopper;
         }
 
+        if (!ContainerUtil.canHopperInventoryFitItemStack(otherHopper.getInventory(), item)) return false; // This hopper cannot fit the item, return false to avoid clogging
+
         final String hopperName = PatternUtil.serialiseComponent(otherHopper.customName());
         if (hopperName == null) return false;
 
@@ -154,6 +158,15 @@ public class InventoryActionListener implements Listener {
             }
             case '~' -> doesItemHaveSpecifiedPotionEffect(item, string); // Item has specified potion effect
             case '+' -> doesItemHaveSpecifiedEnchantment(item, string); // Item has specified enchantment
+            case '=' -> { // Item has specified name (including renames)
+                String displayName = PlainTextComponentSerializer.plainText().serialize(item.displayName())
+                        .toLowerCase()
+                        .replaceAll(" ", "_");
+
+                displayName = displayName.substring(1, displayName.length() - 1);
+
+                yield displayName.equals(string);
+            }
             default -> false;
         };
     }

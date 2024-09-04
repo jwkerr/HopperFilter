@@ -5,6 +5,10 @@ import net.earthmc.hopperfilter.HopperFilter;
 import net.earthmc.hopperfilter.object.HopperRenameInteraction;
 import net.earthmc.hopperfilter.util.PatternUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -21,11 +25,13 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class HopperRenameListener implements Listener {
 
-    private static final Map<Player, Hopper> HOPPER_INTERACTIONS_TYPING = new HashMap<>();
-    private static final Map<Player, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new HashMap<>();
+    private static final Map<Player, Hopper> HOPPER_INTERACTIONS_TYPING = new ConcurrentHashMap<>();
+    private static final Map<Player, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new ConcurrentHashMap<>();
+    private static final Map<Player, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
 
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
@@ -44,29 +50,39 @@ public class HopperRenameListener implements Listener {
         if (player.getGameMode().equals(GameMode.CREATIVE)) event.setCancelled(true);
 
         final ItemStack item = event.getItem();
+        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
+
+        playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
+
         if (item == null) {
-            initiateHopperRename(player, hopper);
-        } else {
-            final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
-            if (!bbe.callEvent()) return;
+            if (hri == null || hri.getHopper().equals(hopper)) {
+                final int numInteractions = NUM_CONSECUTIVE_HOPPER_INTERACTIONS.getOrDefault(player, 0) + 1;
+                NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numInteractions);
 
-            final String key = item.getType().getKey().getKey();
-
-            final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
-            if (hri == null) {
-                final List<String> items = new ArrayList<>(List.of(key));
-                HOPPER_INTERACTIONS_ITEM.put(player, new HopperRenameInteraction(hopper, items));
-            } else {
-                List<String> items = hri.getItems();
-                if (!items.contains(key)) {
-                    items.add(key);
-                } else {
+                if (NUM_CONSECUTIVE_HOPPER_INTERACTIONS.get(player).equals(3)) {
+                    sendCopyableHopperName(hopper, player);
+                    NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, 0);
                     return;
                 }
             }
 
-            playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
+            initiateHopperRename(player, hopper);
+            return;
         }
+
+        final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
+        if (!bbe.callEvent()) return;
+
+        final String key = item.getType().getKey().getKey();
+
+        if (hri == null) {
+            final List<String> items = new ArrayList<>(List.of(key));
+            HOPPER_INTERACTIONS_ITEM.put(player, new HopperRenameInteraction(hopper, items));
+            return;
+        }
+
+        List<String> items = hri.getItems();
+        if (!items.contains(key)) items.add(key);
     }
 
     @EventHandler
@@ -136,12 +152,30 @@ public class HopperRenameListener implements Listener {
         playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
     }
 
+    private void sendCopyableHopperName(final Hopper hopper, final Player player) {
+        TextComponent.Builder builder = Component.text();
+
+        builder.append(Component.text("[", NamedTextColor.DARK_GRAY));
+
+        Component customName = hopper.customName();
+        String stringName = customName == null ? "Item Hopper" : PlainTextComponentSerializer.plainText().serialize(customName);
+        Component name = Component.text(stringName, NamedTextColor.GRAY);
+        builder.append(name);
+
+        builder.append(Component.text("]", NamedTextColor.DARK_GRAY));
+
+        builder.hoverEvent(Component.text("Click to copy!", NamedTextColor.GRAY));
+        builder.clickEvent(ClickEvent.copyToClipboard(stringName));
+
+        player.sendMessage(builder.build());
+    }
+
     private void renameHopper(final Hopper hopper, final String name) {
-        final HopperFilter instance = HopperFilter.getInstance();
-
-        final Component component = name.equals("null") ? null : Component.text(name);
+        final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
         hopper.customName(component);
+        hopper.setTransferCooldown(20); // Simple fix to prevent dupes
 
+        final HopperFilter instance = HopperFilter.getInstance();
         instance.getServer().getRegionScheduler().run(instance, hopper.getLocation(), task -> hopper.update());
 
         playSoundAtLocation(hopper.getLocation(), Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);

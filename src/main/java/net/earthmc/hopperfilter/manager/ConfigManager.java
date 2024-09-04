@@ -28,7 +28,7 @@ public class ConfigManager {
     }
 
     private void addValues() {
-        config.addDefault("enable_simple_hopper_renaming", false);
+        config.addDefault("enable_simple_hopper_renaming", true);
 
         config.options().copyDefaults(true);
     }

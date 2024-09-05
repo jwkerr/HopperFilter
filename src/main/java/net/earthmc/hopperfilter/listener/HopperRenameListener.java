@@ -31,6 +31,7 @@ public class HopperRenameListener implements Listener {
 
     private static final Map<Player, Hopper> HOPPER_INTERACTIONS_TYPING = new ConcurrentHashMap<>();
     private static final Map<Player, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new ConcurrentHashMap<>();
+    private static final Map<Player, Hopper> PREVIOUS_HOPPERS = new ConcurrentHashMap<>();
     private static final Map<Player, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
 
     @EventHandler
@@ -49,31 +50,22 @@ public class HopperRenameListener implements Listener {
 
         if (player.getGameMode().equals(GameMode.CREATIVE)) event.setCancelled(true);
 
-        final ItemStack item = event.getItem();
-        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
-
-        playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
-
-        if (item == null) {
-            if (hri == null || hri.getHopper().equals(hopper)) {
-                final int numInteractions = NUM_CONSECUTIVE_HOPPER_INTERACTIONS.getOrDefault(player, 0) + 1;
-                NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numInteractions);
-
-                if (NUM_CONSECUTIVE_HOPPER_INTERACTIONS.get(player).equals(3)) {
-                    sendCopyableHopperName(hopper, player);
-                    NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, 0);
-                    return;
-                }
-            }
-
-            initiateHopperRename(player, hopper);
-            return;
-        }
-
         final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
         if (!bbe.callEvent()) return;
 
+        playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
+
+        final ItemStack item = event.getItem();
+
+        if (item == null) {
+            initiateHopperRename(player, hopper);
+
+            handleConsecutiveHopperInteractions(player, hopper);
+            return;
+        }
+
         final String key = item.getType().getKey().getKey();
+        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
 
         if (hri == null) {
             final List<String> items = new ArrayList<>(List.of(key));
@@ -81,8 +73,38 @@ public class HopperRenameListener implements Listener {
             return;
         }
 
-        List<String> items = hri.getItems();
+        if (!hri.getHopper().equals(hopper)) {
+            hri.setHopper(hopper);
+            hri.setItems(new ArrayList<>(List.of(key)));
+            return;
+        }
+
+        final List<String> items = hri.getItems();
         if (!items.contains(key)) items.add(key);
+    }
+
+    private void handleConsecutiveHopperInteractions(final Player player, final Hopper hopper) {
+        int numConsecutive = NUM_CONSECUTIVE_HOPPER_INTERACTIONS.computeIfAbsent(player, n -> 0);
+
+        Hopper previousHopper = PREVIOUS_HOPPERS.putIfAbsent(player, hopper);
+
+        if (previousHopper == null || !previousHopper.equals(hopper)) {
+            PREVIOUS_HOPPERS.put(player, hopper);
+
+            numConsecutive = 1;
+            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numConsecutive);
+            return;
+        }
+
+        numConsecutive += 1;
+        if (numConsecutive < 3) {
+            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numConsecutive);
+            return;
+        }
+
+        sendCopyableHopperName(hopper, player);
+        HOPPER_INTERACTIONS_TYPING.remove(player);
+        NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, 0);
     }
 
     @EventHandler
@@ -148,8 +170,6 @@ public class HopperRenameListener implements Listener {
         if (!bbe.callEvent()) return;
 
         HOPPER_INTERACTIONS_TYPING.put(player, hopper);
-
-        playSoundAtLocation(hopper.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.1F, 0.55F, 1.25F);
     }
 
     private void sendCopyableHopperName(final Hopper hopper, final Player player) {

@@ -18,7 +18,10 @@ public class PatternUtil {
     }
 
     public static <T extends Keyed> @Nullable Keyed getKeyedFromString(String string, Registry<T> registry) {
-        final NamespacedKey key = NamespacedKey.minecraft(string);
+        final NamespacedKey key = NamespacedKey.fromString(string);
+
+        if (key == null)
+            return null;
 
         return registry.get(key);
     }

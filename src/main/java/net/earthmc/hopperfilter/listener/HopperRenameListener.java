@@ -189,7 +189,9 @@ public class HopperRenameListener implements Listener {
         builder.append(Component.text("[", NamedTextColor.DARK_GRAY));
 
         Component customName = hopper.customName();
-        String stringName = customName == null ? "Item Hopper" : PlainTextComponentSerializer.plainText().serialize(customName);
+        if (customName == null) return;
+
+        String stringName = PlainTextComponentSerializer.plainText().serialize(customName);
         Component name = Component.text(stringName, NamedTextColor.GRAY);
         builder.append(name);
 

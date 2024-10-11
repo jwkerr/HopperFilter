@@ -29,15 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HopperRenameListener implements Listener {
 
-    private static final Map<Player, Hopper> HOPPER_INTERACTIONS_TYPING = new ConcurrentHashMap<>();
-    private static final Map<Player, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new ConcurrentHashMap<>();
-    private static final Map<Player, Hopper> PREVIOUS_HOPPERS = new ConcurrentHashMap<>();
-    private static final Map<Player, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Hopper> HOPPER_INTERACTIONS_TYPING = new ConcurrentHashMap<>();
+    private static final Map<UUID, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new ConcurrentHashMap<>();
+    private static final Map<UUID, Hopper> PREVIOUS_HOPPERS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
 
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
-        if (!HopperFilter.getConfigManager().getConfig().getBoolean("enable_simple_hopper_renaming")) return;
-
         final Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
 
@@ -65,11 +63,11 @@ public class HopperRenameListener implements Listener {
         }
 
         final String key = item.getType().getKey().getKey();
-        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
+        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player.getUniqueId());
 
         if (hri == null) {
             final List<String> items = new ArrayList<>(List.of(key));
-            HOPPER_INTERACTIONS_ITEM.put(player, new HopperRenameInteraction(hopper, items));
+            HOPPER_INTERACTIONS_ITEM.put(player.getUniqueId(), new HopperRenameInteraction(hopper, items));
             return;
         }
 
@@ -84,32 +82,32 @@ public class HopperRenameListener implements Listener {
     }
 
     private void handleConsecutiveHopperInteractions(final Player player, final Hopper hopper) {
-        int numConsecutive = NUM_CONSECUTIVE_HOPPER_INTERACTIONS.computeIfAbsent(player, n -> 0);
+        int numConsecutive = NUM_CONSECUTIVE_HOPPER_INTERACTIONS.computeIfAbsent(player.getUniqueId(), n -> 0);
 
-        Hopper previousHopper = PREVIOUS_HOPPERS.putIfAbsent(player, hopper);
+        Hopper previousHopper = PREVIOUS_HOPPERS.putIfAbsent(player.getUniqueId(), hopper);
 
         if (previousHopper == null || !previousHopper.equals(hopper)) {
-            PREVIOUS_HOPPERS.put(player, hopper);
+            PREVIOUS_HOPPERS.put(player.getUniqueId(), hopper);
 
             numConsecutive = 1;
-            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numConsecutive);
+            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player.getUniqueId(), numConsecutive);
             return;
         }
 
         numConsecutive += 1;
         if (numConsecutive < 3) {
-            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, numConsecutive);
+            NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player.getUniqueId(), numConsecutive);
             return;
         }
 
         sendCopyableHopperName(hopper, player);
-        NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, 0);
+        NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player.getUniqueId(), 0);
     }
 
     @EventHandler
     public void cancelTypingInteractionOnMove(final PlayerMoveEvent event) {
         final Player player = event.getPlayer();
-        final Hopper hopper = HOPPER_INTERACTIONS_TYPING.get(player);
+        final Hopper hopper = HOPPER_INTERACTIONS_TYPING.get(player.getUniqueId());
         if (hopper == null) return;
 
         final Location hopperLocation = hopper.getLocation();
@@ -117,14 +115,14 @@ public class HopperRenameListener implements Listener {
         final HopperFilter instance = HopperFilter.getInstance();
         instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
             if (!(hopperLocation.getBlock().getState() instanceof Hopper)) {
-                HOPPER_INTERACTIONS_TYPING.remove(player);
+                HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
                 return;
             }
 
             final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
             if (distanceSquared < 5 * 5) return;
 
-            HOPPER_INTERACTIONS_TYPING.remove(player);
+            HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
             playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
         });
     }
@@ -132,7 +130,7 @@ public class HopperRenameListener implements Listener {
     @EventHandler
     public void cancelItemInteractionOnMove(final PlayerMoveEvent event) {
         final Player player = event.getPlayer();
-        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player);
+        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.get(player.getUniqueId());
         if (hri == null) return;
 
         final Location hopperLocation = hri.getHopper().getLocation();
@@ -140,14 +138,14 @@ public class HopperRenameListener implements Listener {
         final HopperFilter instance = HopperFilter.getInstance();
         instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
             if (!(hopperLocation.getBlock().getState() instanceof Hopper)) {
-                HOPPER_INTERACTIONS_ITEM.remove(player);
+                HOPPER_INTERACTIONS_ITEM.remove(player.getUniqueId());
                 return;
             }
 
             final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
             if (distanceSquared < 5 * 5) return;
 
-            HOPPER_INTERACTIONS_ITEM.remove(player);
+            HOPPER_INTERACTIONS_ITEM.remove(player.getUniqueId());
             playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
         });
     }
@@ -157,7 +155,7 @@ public class HopperRenameListener implements Listener {
         if (event.isSneaking()) return;
         final Player player = event.getPlayer();
 
-        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.remove(player);
+        final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.remove(player.getUniqueId());
         if (hri != null) {
             final Hopper hopper = hri.getHopper();
             renameHopper(hopper, String.join(",", hri.getItems()));
@@ -167,7 +165,7 @@ public class HopperRenameListener implements Listener {
     @EventHandler
     public void onAsyncChat(final AsyncChatEvent event) {
         final Player player = event.getPlayer();
-        final Hopper hopper = HOPPER_INTERACTIONS_TYPING.get(player);
+        final Hopper hopper = HOPPER_INTERACTIONS_TYPING.get(player.getUniqueId());
         if (hopper == null) return;
 
         event.setCancelled(true);
@@ -175,14 +173,14 @@ public class HopperRenameListener implements Listener {
         final String originalMessage = PatternUtil.serialiseComponent(event.originalMessage());
         renameHopper(hopper, originalMessage);
 
-        HOPPER_INTERACTIONS_TYPING.remove(player);
+        HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
     }
 
     private void initiateHopperRename(final Player player, final Hopper hopper) {
         final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
         if (!bbe.callEvent()) return;
 
-        HOPPER_INTERACTIONS_TYPING.put(player, hopper);
+        HOPPER_INTERACTIONS_TYPING.put(player.getUniqueId(), hopper);
     }
 
     private void sendCopyableHopperName(final Hopper hopper, final Player player) {

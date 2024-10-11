@@ -103,7 +103,6 @@ public class HopperRenameListener implements Listener {
         }
 
         sendCopyableHopperName(hopper, player);
-        HOPPER_INTERACTIONS_TYPING.remove(player);
         NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player, 0);
     }
 
@@ -114,13 +113,20 @@ public class HopperRenameListener implements Listener {
         if (hopper == null) return;
 
         final Location hopperLocation = hopper.getLocation();
-        final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
 
-        if (distanceSquared < 5 * 5) return;
+        final HopperFilter instance = HopperFilter.getInstance();
+        instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
+            if (!(hopperLocation.getBlock().getState() instanceof Hopper)) {
+                HOPPER_INTERACTIONS_TYPING.remove(player);
+                return;
+            }
 
-        HOPPER_INTERACTIONS_TYPING.remove(player);
+            final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
+            if (distanceSquared < 5 * 5) return;
 
-        playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
+            HOPPER_INTERACTIONS_TYPING.remove(player);
+            playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
+        });
     }
 
     @EventHandler
@@ -130,13 +136,20 @@ public class HopperRenameListener implements Listener {
         if (hri == null) return;
 
         final Location hopperLocation = hri.getHopper().getLocation();
-        final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
 
-        if (distanceSquared < 5 * 5) return;
+        final HopperFilter instance = HopperFilter.getInstance();
+        instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
+            if (!(hopperLocation.getBlock().getState() instanceof Hopper)) {
+                HOPPER_INTERACTIONS_ITEM.remove(player);
+                return;
+            }
 
-        HOPPER_INTERACTIONS_ITEM.remove(player);
+            final double distanceSquared = event.getTo().distanceSquared(hopperLocation);
+            if (distanceSquared < 5 * 5) return;
 
-        playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
+            HOPPER_INTERACTIONS_ITEM.remove(player);
+            playSoundAtLocation(hopperLocation, Sound.BLOCK_ANVIL_LAND, 0.3F, 1.25F, 1.5F);
+        });
     }
 
     @EventHandler
@@ -191,14 +204,20 @@ public class HopperRenameListener implements Listener {
     }
 
     private void renameHopper(final Hopper hopper, final String name) {
-        final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
-        hopper.customName(component);
-        hopper.setTransferCooldown(20); // Simple fix to prevent dupes
+        final Location hopperLocation = hopper.getLocation();
 
         final HopperFilter instance = HopperFilter.getInstance();
-        instance.getServer().getRegionScheduler().run(instance, hopper.getLocation(), task -> hopper.update());
+        instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
+            if (!(hopperLocation.getBlock().getState() instanceof Hopper currentHopper)) return;
 
-        playSoundAtLocation(hopper.getLocation(), Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
+            final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
+            currentHopper.customName(component);
+            currentHopper.setTransferCooldown(20); // Simple fix to prevent dupes
+
+            currentHopper.update();
+
+            playSoundAtLocation(hopperLocation, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
+        });
     }
 
     private void playSoundAtLocation(Location location, Sound sound, float volume, float origin, float bound) {

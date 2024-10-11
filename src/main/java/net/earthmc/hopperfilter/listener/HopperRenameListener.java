@@ -39,7 +39,7 @@ public class HopperRenameListener implements Listener {
         final Block clickedBlock = event.getClickedBlock();
         if (clickedBlock == null) return;
 
-        if (!(clickedBlock.getState() instanceof final Hopper hopper)) return;
+        if (!(clickedBlock.getState(false) instanceof final Hopper hopper)) return;
 
         if (!event.getAction().equals(Action.LEFT_CLICK_BLOCK)) return;
 
@@ -206,13 +206,13 @@ public class HopperRenameListener implements Listener {
 
         final HopperFilter instance = HopperFilter.getInstance();
         instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
-            if (!(hopperLocation.getBlock().getState() instanceof Hopper currentHopper)) return;
+            if (!(hopperLocation.getBlock().getState() instanceof Hopper)) return;
 
             final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
-            currentHopper.customName(component);
-            currentHopper.setTransferCooldown(20); // Simple fix to prevent dupes
+            hopper.customName(component);
+            hopper.setTransferCooldown(20); // Simple fix to prevent dupes
 
-            currentHopper.update();
+            hopper.update();
 
             playSoundAtLocation(hopperLocation, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
         });

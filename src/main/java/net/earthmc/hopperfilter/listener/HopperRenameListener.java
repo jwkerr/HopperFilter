@@ -100,7 +100,7 @@ public class HopperRenameListener implements Listener {
             return;
         }
 
-        sendCopyableHopperName(hopper, player);
+        sendCopyableHopperName(hopper, player, false);
         NUM_CONSECUTIVE_HOPPER_INTERACTIONS.put(player.getUniqueId(), 0);
     }
 
@@ -158,7 +158,7 @@ public class HopperRenameListener implements Listener {
         final HopperRenameInteraction hri = HOPPER_INTERACTIONS_ITEM.remove(player.getUniqueId());
         if (hri != null) {
             final Hopper hopper = hri.getHopper();
-            renameHopper(hopper, String.join(",", hri.getItems()));
+            renameHopper(hopper, player, String.join(",", hri.getItems()));
         }
     }
 
@@ -171,7 +171,7 @@ public class HopperRenameListener implements Listener {
         event.setCancelled(true);
 
         final String originalMessage = PatternUtil.serialiseComponent(event.originalMessage());
-        renameHopper(hopper, originalMessage);
+        renameHopper(hopper, player, originalMessage);
 
         HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
     }
@@ -183,8 +183,12 @@ public class HopperRenameListener implements Listener {
         HOPPER_INTERACTIONS_TYPING.put(player.getUniqueId(), hopper);
     }
 
-    private void sendCopyableHopperName(final Hopper hopper, final Player player) {
+    private void sendCopyableHopperName(final Hopper hopper, final Player player, boolean viaRenaming) {
         TextComponent.Builder builder = Component.text();
+
+        if (viaRenaming) {
+            builder.append(Component.text("Set filter to ", NamedTextColor.GREEN));
+        }
 
         builder.append(Component.text("[", NamedTextColor.DARK_GRAY));
 
@@ -203,7 +207,7 @@ public class HopperRenameListener implements Listener {
         player.sendMessage(builder.build());
     }
 
-    private void renameHopper(final Hopper hopper, final String name) {
+    private void renameHopper(final Hopper hopper, final Player player, final String name) {
         final Location hopperLocation = hopper.getLocation();
 
         final HopperFilter instance = HopperFilter.getInstance();
@@ -216,6 +220,7 @@ public class HopperRenameListener implements Listener {
 
             hopper.update();
 
+            sendCopyableHopperName(hopper, player, true);
             playSoundAtLocation(hopperLocation, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.75F, 1.25F, 1.5F);
         });
     }

@@ -21,6 +21,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -174,6 +175,16 @@ public class HopperRenameListener implements Listener {
         renameHopper(hopper, originalMessage);
 
         HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        final UUID uuid = event.getPlayer().getUniqueId();
+
+        HOPPER_INTERACTIONS_TYPING.remove(uuid);
+        HOPPER_INTERACTIONS_ITEM.remove(uuid);
+        PREVIOUS_HOPPERS.remove(uuid);
+        NUM_CONSECUTIVE_HOPPER_INTERACTIONS.remove(uuid);
     }
 
     private void initiateHopperRename(final Player player, final Hopper hopper) {

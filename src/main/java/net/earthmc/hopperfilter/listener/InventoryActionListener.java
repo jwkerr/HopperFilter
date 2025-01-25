@@ -141,8 +141,7 @@ public class InventoryActionListener implements Listener {
     private boolean canItemPassPattern(final String pattern, final ItemStack item) {
         final String itemName = item.getType().getKey().getKey();
 
-        if (pattern.isEmpty() || pattern.equals(itemName))
-            return true;
+        if (pattern.isEmpty() || pattern.equals(itemName)) return true;
 
         final char prefix = pattern.charAt(0); // The character at the start of the pattern
         final String string = pattern.substring(1); // Anything after the prefix
@@ -153,8 +152,7 @@ public class InventoryActionListener implements Listener {
             case '$' -> itemName.endsWith(string); // Ends with specified pattern
             case '#' -> { // Item has specified tag
                 final NamespacedKey key = NamespacedKey.fromString(string);
-                if (key == null)
-                    yield false;
+                if (key == null) yield false;
 
                 Tag<Material> tag = Bukkit.getTag(Tag.REGISTRY_BLOCKS, key, Material.class);
                 if (tag == null) tag = Bukkit.getTag(Tag.REGISTRY_ITEMS, key, Material.class);

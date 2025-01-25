@@ -21,6 +21,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -33,6 +34,8 @@ public class HopperRenameListener implements Listener {
     private static final Map<UUID, HopperRenameInteraction> HOPPER_INTERACTIONS_ITEM = new ConcurrentHashMap<>();
     private static final Map<UUID, Hopper> PREVIOUS_HOPPERS = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
+
+    public static final Set<String> REMOVE_NAME_STRINGS = Set.of("null", "remove", "clear");
 
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
@@ -176,6 +179,16 @@ public class HopperRenameListener implements Listener {
         HOPPER_INTERACTIONS_TYPING.remove(player.getUniqueId());
     }
 
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        final UUID uuid = event.getPlayer().getUniqueId();
+
+        HOPPER_INTERACTIONS_TYPING.remove(uuid);
+        HOPPER_INTERACTIONS_ITEM.remove(uuid);
+        PREVIOUS_HOPPERS.remove(uuid);
+        NUM_CONSECUTIVE_HOPPER_INTERACTIONS.remove(uuid);
+    }
+
     private void initiateHopperRename(final Player player, final Hopper hopper) {
         final BlockBreakEvent bbe = new BlockBreakEvent(hopper.getBlock(), player);
         if (!bbe.callEvent()) return;
@@ -210,7 +223,7 @@ public class HopperRenameListener implements Listener {
         instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
             if (!(hopperLocation.getBlock().getState() instanceof Hopper)) return;
 
-            final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
+            final Component component = REMOVE_NAME_STRINGS.contains(name) ? null : Component.text(name);
             hopper.customName(component);
             hopper.setTransferCooldown(20); // Simple fix to prevent dupes
 

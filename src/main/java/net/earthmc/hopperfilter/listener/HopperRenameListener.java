@@ -35,6 +35,8 @@ public class HopperRenameListener implements Listener {
     private static final Map<UUID, Hopper> PREVIOUS_HOPPERS = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> NUM_CONSECUTIVE_HOPPER_INTERACTIONS = new ConcurrentHashMap<>();
 
+    public static final Set<String> REMOVE_NAME_STRINGS = Set.of("null", "remove", "clear");
+
     @EventHandler
     public void onPlayerInteract(final PlayerInteractEvent event) {
         final Block clickedBlock = event.getClickedBlock();
@@ -221,7 +223,7 @@ public class HopperRenameListener implements Listener {
         instance.getServer().getRegionScheduler().run(instance, hopperLocation, task -> {
             if (!(hopperLocation.getBlock().getState() instanceof Hopper)) return;
 
-            final Component component = name.equals("null") || name.equals("remove") ? null : Component.text(name);
+            final Component component = REMOVE_NAME_STRINGS.contains(name) ? null : Component.text(name);
             hopper.customName(component);
             hopper.setTransferCooldown(20); // Simple fix to prevent dupes
 

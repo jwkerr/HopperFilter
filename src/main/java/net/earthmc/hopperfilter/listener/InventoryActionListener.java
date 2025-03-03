@@ -22,6 +22,7 @@ import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import java.util.List;
 import java.util.Map;
@@ -186,7 +187,11 @@ public class InventoryActionListener implements Listener {
         final Integer userLevel = pair.getRight();
 
         final PotionMeta meta = (PotionMeta) item.getItemMeta();
-        final List<PotionEffect> effects = meta.getBasePotionType().getPotionEffects();
+        final PotionType potionType = meta.getBasePotionType();
+        if (potionType == null)
+            return false;
+
+        final List<PotionEffect> effects = potionType.getPotionEffects();
         if (userLevel == null) {
             for (PotionEffect effect : effects) {
                 if (effect.getType().equals(type)) return true;
